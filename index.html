@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mail Route</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- #stage is sized by JS to an exact integer multiple of the 320x180 canvas,
+     so the HUD and overlays always line up with the pixels underneath. -->
+<div id="stage">
+  <canvas id="screen" width="200" height="150"></canvas>
+
+  <!-- ---------------- HUD (shown while playing) ---------------- -->
+  <div id="hud" class="hidden">
+    <div class="hud-row">
+      <div class="pill" id="clock">5:00</div>
+      <div class="pill" id="mail">MAIL 0/0</div>
+      <div id="routebar"><div id="routefill"></div><div id="routeyou"></div></div>
+      <div class="pill" id="score">0</div>
+    </div>
+    <!-- Control legend. The E lights up when you're standing somewhere you can
+         actually post a letter, which is what the old floating prompt did. -->
+    <div class="legend">
+      <span class="key" id="key-e"><kbd>E</kbd><span>deliver</span></span>
+      <span class="key"><kbd>P</kbd><span>pause</span></span>
+      <span class="key"><kbd>R</kbd><span>quit</span></span>
+    </div>
+  </div>
+
+  <!-- ---------------- Menu ---------------- -->
+  <div id="menu" class="overlay">
+    <h1>MAIL ROUTE</h1>
+    <p class="tagline">Empty the bag before the shift ends.</p>
+
+    <p class="label">Pick your shift</p>
+    <div class="shifts">
+      <button class="shift" data-minutes="5"><b>5</b><span>min</span><em>38 houses</em></button>
+      <button class="shift" data-minutes="10"><b>10</b><span>min</span><em>78 houses</em></button>
+      <button class="shift" data-minutes="15"><b>15</b><span>min</span><em>115 houses</em></button>
+    </div>
+
+    <div class="controls">
+      <div><kbd>&larr;</kbd><kbd>&uarr;</kbd><kbd>&darr;</kbd><kbd>&rarr;</kbd> walk <span class="dim">(or WASD)</span></div>
+      <div><kbd>Space</kbd> hop &mdash; a quick burst of speed</div>
+      <div><kbd>E</kbd> deliver &mdash; the legend up top lights up when you can</div>
+      <div><kbd>P</kbd> pause &nbsp; <kbd>R</kbd> quit to menu</div>
+    </div>
+    <p class="hint">Mailboxes at the kerb are easy. Fenced gardens mean a walk to the front door &mdash; and usually a dog. Mind the traffic when you cross.</p>
+  </div>
+
+  <!-- ---------------- Pause ---------------- -->
+  <div id="paused" class="overlay hidden">
+    <h2>PAUSED</h2>
+    <p class="hint"><kbd>P</kbd> to resume &middot; <kbd>R</kbd> to quit</p>
+  </div>
+
+  <!-- ---------------- End of shift ---------------- -->
+  <div id="over" class="overlay hidden">
+    <h2 id="over-title">SHIFT COMPLETE</h2>
+    <p id="over-sub" class="tagline"></p>
+    <table id="over-stats"></table>
+    <button id="again" class="shift wide">Back to the depot</button>
+  </div>
+</div>
+
+<script src="sprites.js"></script>
+<script src="world.js"></script>
+<script src="entities.js"></script>
+<script src="render.js"></script>
+<script src="game.js"></script>
+</body>
+</html>
