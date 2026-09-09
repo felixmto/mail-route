@@ -9,8 +9,18 @@
 // up and down.
 // ---------------------------------------------------------------------------
 
-const VIEW_W = 200;
-const VIEW_H = 150;
+// The view is 200 world units wide, always. BAND below, the lane positions,
+// and every mailbox/fence/dog x are absolute coordinates inside that 200-wide
+// cross-section, so this number must not change.
+let VIEW_W = 200;
+
+// How much of the street you can see at once. Desktop keeps the 4:3 shape;
+// mobile mode raises this to match a tall phone screen (see fitToWindow).
+let VIEW_H = 150;
+
+// True while the game is in touch/portrait mode. Set by setMobile() in
+// mobile.js; declared here because world.js loads first and game.js reads it.
+let MOBILE = false;
 
 // A cross-section of the street, left to right.
 const BAND = {

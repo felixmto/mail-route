@@ -603,10 +603,22 @@ function drawEffects(ctx, g) {
 // ---------------------------------------------------------------------------
 function drawCloudShadows(ctx, g) {
   ctx.fillStyle = 'rgba(34, 52, 34, 0.06)';
-  for (let i = 0; i < 3; i++) {
-    const h = 70 + i * 26;
-    const y = ((g.time * (4 + i * 2) - g.camera.y * 0.22) % (VIEW_H + h * 2)) - h;
-    const x = -20 + i * 78;
+
+  // How many clouds it takes to dapple the view. A tall phone screen shows
+  // nearly three times as much street as the desktop 4:3 box, and three fixed
+  // clouds spread over that distance leave the sky looking bare.
+  const count = Math.max(3, Math.round(VIEW_H / 50));
+
+  for (let i = 0; i < count; i++) {
+    const h = 70 + (i % 3) * 26;
+    const span = VIEW_H + h * 2;
+    // Each cloud gets its own drift speed AND its own head start, so they don't
+    // line up in rows once there are more than three of them.
+    const drift = g.time * (4 + (i % 3) * 2) - g.camera.y * 0.22 + i * 97;
+    const y = (((drift % span) + span) % span) - h;
+    // Step across the street and wrap, so they stagger instead of stacking up
+    // in the same three columns however many there are.
+    const x = ((i * 78) % (VIEW_W + 40)) - 20;
     ctx.beginPath();
     ctx.ellipse(x + 45, y + h / 2, 58, h / 2, 0, 0, Math.PI * 2);
     ctx.fill();

@@ -69,6 +69,38 @@ so, but roughly one crossing in ten will keep you waiting several seconds.
 can always get away by leaving — the danger is dawdling at the door while one
 closes in. A bite costs 8 seconds.
 
+## On a phone
+
+Pick **Mobile** on the title screen and the game reshapes itself for a portrait
+phone screen: the street fills the whole display top to bottom, with the
+controls in a bar along the top. On a touch device it picks Mobile for you the
+first time; whichever you choose after that is remembered.
+
+The controls are a different scheme rather than a translation of the keyboard
+one, because there is nowhere to rest four thumbs on a phone:
+
+| Gesture | Does |
+| --- | --- |
+| Swipe up / down / left / right | Turn him. He walks non-stop, so this is all the steering there is |
+| Double-tap | Deliver a letter, or give a dog a treat |
+| **DELIVER** button | The same thing, if a double-tap is fiddly. It lights gold at a house, pink at a dog |
+| Coffee / ❚❚ / ✕ buttons | Coffee, pause, quit |
+
+Two things work differently from the desktop game:
+
+- **He stops at each house by himself.** A delivery zone is only about 0.4
+  seconds wide at walking pace, which is not enough to land a double-tap on, so
+  he pulls up when he reaches one and waits there until you swipe him away.
+  Getting to the house is still the hard part. He never stops for a dog — being
+  frozen in front of one you meant to outrun would be miserable.
+- **There is no hop.** It can't clear a car anyway, so it was only a small burst
+  of speed, and every sensible gesture for it clashes with the double-tap.
+
+Because the screen is tall you can see about two and a half times as far up the
+street as on desktop, so traffic is easier to read — but you can never stand
+still to think, which pulls the other way. The shift lengths are the same in
+both versions.
+
 ## Changing how hard it is
 
 Everything worth tuning lives at the top of a file, with a comment.
@@ -84,6 +116,9 @@ Everything worth tuning lives at the top of a file, with a comment.
 - **`world.js`, `generateTrees` / `generateNeighbours`** — how busy the street
   looks. Both work off `routeLength / n`, so a smaller `n` means more of them.
   Purely cosmetic: neither is solid and neither is worth points.
+- **`mobile.js`, the constants at the top** — how far a finger has to travel
+  before it counts as a swipe rather than a tap, and how quickly the two taps of
+  a double-tap have to follow each other.
 - **`entities.js`, the constants at the top** — walking speed, hop height and
   duration, dog speed and eyesight (`DOG_AGGRO`), how close a dog has to be
   before you can treat it (`TREAT_RANGE`), how long and how strong the coffee is
@@ -108,6 +143,7 @@ finishable before you keep the change.
 | `entities.js` | Postman movement, the hop, dog AI, cars |
 | `render.js` | Camera and all the drawing |
 | `game.js` | Game loop, timer, collisions, delivering, scoring |
+| `mobile.js` | The phone version: swipe/tap gestures and the Desktop/Mobile switch |
 
 ## Poking at it while it runs
 
@@ -123,15 +159,21 @@ tuned — `update(1/60)` advances exactly one frame:
 
     for (let i = 0; i < 600; i++) update(1/60)   // ten seconds, instantly
 
+There is a `__mobile` object too, for the phone version:
+
+    __mobile.setMobile(true)      // switch to the mobile layout on a desktop
+    __mobile.setDirection('left') // turn him, the same as a swipe would
+
 ## How the art works
 
 Everything is drawn as shapes rather than images — rounded rectangles, circles
 and curves — so there is nothing to load and nothing to go blurry.
 
 The trick is that the game draws in **world units** rather than screen pixels.
-The visible stretch of street is always 200 x 150 of them, and `game.js` works
-out how many real screen pixels that should be and applies it as a single
-transform before each frame. So every coordinate in `render.js` is a world
+The street is always 200 of them across; how far up it you can see is `VIEW_H`,
+which is 150 on desktop and worked out from the screen shape in mobile mode
+(about 390 on an iPhone). `game.js` turns that into real screen pixels and
+applies it as a single transform before each frame. So every coordinate in `render.js` is a world
 unit, the same numbers the game logic uses, and the picture comes out sharp at
 any window size and on any display, including retina screens.
 

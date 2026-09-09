@@ -30,28 +30,37 @@ const el = {
   keyC:    document.getElementById('key-c'),
   keyCLabel: null,   // filled in below, once we know the chip exists
   coffeeIcon: document.getElementById('coffee-icon'),
+  // Mobile control bar. Same actions, same game state behind them.
+  tAct:    document.getElementById('t-act'),
+  tCoffee: document.getElementById('t-coffee'),
+  tCoffeeIcon: document.getElementById('t-coffee-icon'),
 };
 if (el.keyC) el.keyCLabel = el.keyC.querySelector('span');
 
-// The cup icon is the same pixel art as everything else, painted into its own
-// little 12x9 canvas and blown up by CSS. Repainted only when it changes state,
-// since drawHud runs every frame.
-const coffeeIconCtx = el.coffeeIcon ? el.coffeeIcon.getContext('2d') : null;
-let coffeeIconPainted = null;
+// The cup icon is the same vector art as everything else, painted into its own
+// little canvas and scaled by CSS. There are two of them — the one beside the
+// keyboard legend and the one on the mobile coffee button — and both are
+// repainted only when the coffee changes state, since drawHud runs every frame.
+const coffeeCups = [
+  { el: el.coffeeIcon,   w: 26, h: 22, painted: null },
+  { el: el.tCoffeeIcon,  w: 30, h: 26, painted: null },
+];
 
 function paintCoffeeIcon(spent) {
-  if (!coffeeIconCtx || coffeeIconPainted === spent) return;
-  coffeeIconPainted = spent;
+  for (const cup of coffeeCups) {
+    if (!cup.el || cup.painted === spent) continue;
+    cup.painted = spent;
 
-  // Match the screen's pixel density here too, or the cup looks soft next to
-  // the crisp text beside it.
-  const dpr = Math.min(window.devicePixelRatio || 1, 3);
-  const cssW = 26, cssH = 22;
-  el.coffeeIcon.width = Math.round(cssW * dpr);
-  el.coffeeIcon.height = Math.round(cssH * dpr);
-  coffeeIconCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  coffeeIconCtx.clearRect(0, 0, cssW, cssH);
-  drawCoffeeCup(coffeeIconCtx, 2, 0, 22, spent);
+    // Match the screen's pixel density here too, or the cup looks soft next to
+    // the crisp text beside it.
+    const dpr = Math.min(window.devicePixelRatio || 1, 3);
+    cup.el.width = Math.round(cup.w * dpr);
+    cup.el.height = Math.round(cup.h * dpr);
+    const cctx = cup.el.getContext('2d');
+    cctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    cctx.clearRect(0, 0, cup.w, cup.h);
+    drawCoffeeCup(cctx, 2, 0, cup.w - 4, spent);
+  }
 }
 
 // The whole game lives in this one object. It's also exposed as window.__game
@@ -68,6 +77,7 @@ const g = {
   score: 0,
   promptHouse: null,      // the house you're currently standing at, if any
   treatDog: null,         // a dog close enough to hand a biscuit to
+  autoStopHouse: null,    // mobile only: the house that last pulled him up
   coffee: { available: true, activeT: 0 },
   stats: { bites: 0, hitByCar: 0, hops: 0, treats: 0 },
 };
@@ -138,6 +148,7 @@ function startShift(minutes) {
   g.score = 0;
   g.promptHouse = null;
   g.treatDog = null;
+  g.autoStopHouse = null;
   g.coffee = { available: true, activeT: 0 };
   g.stats = { bites: 0, hitByCar: 0, hops: 0, treats: 0 };
   setState('PLAYING');
@@ -360,6 +371,24 @@ function update(dt) {
   g.treatDog = busy ? null : findTreatableDog();
   g.promptHouse = busy ? null : findDeliverableHouse();
 
+  // On a phone the postman runs non-stop, so he'd sail straight past a mailbox
+  // before you could double-tap. Reaching the house stays the hard part; he
+  // pulls up by himself once he's there, and waits for your next swipe.
+  //
+  // Only houses do this, never dogs: freezing you in front of a dog you were
+  // trying to outrun would be the worst thing the game could do.
+  if (MOBILE) {
+    if (!g.promptHouse) {
+      g.autoStopHouse = null;
+    } else if (g.promptHouse !== g.autoStopHouse) {
+      input.left = input.right = input.up = input.down = false;
+      // Remember which house stopped him, so that when you swipe away he can
+      // leave — otherwise he'd be re-frozen on the very next step, still
+      // standing in the same zone.
+      g.autoStopHouse = g.promptHouse;
+    }
+  }
+
   // --- Mailbox flags easing down after a delivery --------------------------
   for (const h of w.houses) {
     if (h.delivered && h.flagT < 1) h.flagT = Math.min(1, h.flagT + dt * 4);
@@ -467,30 +496,80 @@ function drawHud() {
   if (el.coffeeIcon) el.coffeeIcon.classList.toggle('spent', spent);
   paintCoffeeIcon(spent);
 
+  // The mobile deliver button is driven by exactly the same two values as the
+  // E chip above, so the two modes can never disagree about what's possible.
+  if (el.tAct) {
+    el.tAct.classList.toggle('active', g.promptHouse !== null || g.treatDog !== null);
+    el.tAct.classList.toggle('treat', g.treatDog !== null);
+    el.tAct.textContent = g.treatDog ? 'TREAT' : 'DELIVER';
+  }
+  if (el.tCoffee) {
+    el.tCoffee.classList.toggle('active', brewing);
+    el.tCoffee.classList.toggle('spent', spent);
+  }
+
   const done = 1 - g.mailLeft / g.world.totalMail;
   el.fill.style.width = (done * 100).toFixed(1) + '%';
   el.you.style.left = ((g.player.y / g.world.routeLength) * 100).toFixed(1) + '%';
 }
 
 // ---------------------------------------------------------------------------
-// Fitting the 200x150 canvas to the window at a whole-number scale, so every
-// game pixel stays a perfect square block.
+// Fitting the canvas to the window.
+//
+// The street is always VIEW_W (200) units across. On desktop the view is a
+// fixed 200x150 box scaled up to fit the window. On a phone we instead keep
+// the width and work out VIEW_H from whatever height is left over, so the game
+// fills a tall screen edge to edge with no black bars.
 // ---------------------------------------------------------------------------
+
+// How much room the mobile control bar takes at the top of the screen, in CSS
+// pixels. It has two rows: the clock/mail/score strip, and the touch buttons
+// (which need to be at least 44px tall to be comfortably tappable).
+const BAR_H = 84;
+
+// The tallest view we'll allow. A very long, narrow window would otherwise let
+// you see an unreasonable distance up the street.
+const VIEW_H_MAX = 520;
+
 function fitToWindow() {
-  // Fill as much of the window as we can while keeping the street's shape.
-  // No longer rounded to a whole number: the art is smooth now, so a fractional
-  // scale is fine and lets the game use the whole window.
-  const scale = Math.max(1, Math.min(
-    (window.innerWidth - 24) / VIEW_W,
-    (window.innerHeight - 24) / VIEW_H,
-  ));
-  const cssW = Math.round(VIEW_W * scale);
-  const cssH = Math.round(VIEW_H * scale);
+  let cssW, cssH;
+
+  if (MOBILE) {
+    // visualViewport is the box you can actually see, which on iOS Safari
+    // shrinks and grows as the URL bar slides in and out. Falling back to
+    // innerWidth/Height for browsers that don't have it.
+    const vv = window.visualViewport;
+    const winW = Math.round(vv ? vv.width : window.innerWidth);
+    const winH = Math.round(vv ? vv.height : window.innerHeight);
+
+    cssW = winW;
+    cssH = Math.max(120, winH - BAR_H);
+
+    // Derive the view height from the leftover box rather than the other way
+    // round. Because of this, one scale factor fits both axes exactly.
+    VIEW_H = clamp(VIEW_W * (cssH / cssW), 150, VIEW_H_MAX);
+
+    el.stage.style.width = '100%';
+    el.stage.style.height = winH + 'px';
+  } else {
+    VIEW_H = 150;
+
+    // Fill as much of the window as we can while keeping the street's shape.
+    // Not rounded to a whole number: the art is smooth, so a fractional scale
+    // is fine and lets the game use the whole window.
+    const scale = Math.max(1, Math.min(
+      (window.innerWidth - 24) / VIEW_W,
+      (window.innerHeight - 24) / VIEW_H,
+    ));
+    cssW = Math.round(VIEW_W * scale);
+    cssH = Math.round(VIEW_H * scale);
+
+    el.stage.style.width = cssW + 'px';
+    el.stage.style.height = cssH + 'px';
+  }
 
   canvas.style.width = cssW + 'px';
   canvas.style.height = cssH + 'px';
-  el.stage.style.width = cssW + 'px';
-  el.stage.style.height = cssH + 'px';
 
   // Give the canvas as many real pixels as the display actually has, so the
   // curves are crisp on a retina screen rather than blown up from half size.
@@ -500,6 +579,13 @@ function fitToWindow() {
   unitScale = (cssW / VIEW_W) * dpr;
 }
 window.addEventListener('resize', fitToWindow);
+window.addEventListener('orientationchange', fitToWindow);
+// iOS fires these as the URL bar collapses mid-game; without them the canvas
+// would keep the height it had when the page loaded.
+if (window.visualViewport) {
+  window.visualViewport.addEventListener('resize', fitToWindow);
+  window.visualViewport.addEventListener('scroll', fitToWindow);
+}
 fitToWindow();
 
 // ---------------------------------------------------------------------------

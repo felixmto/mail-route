@@ -262,3 +262,156 @@ kbd {
                              font-variant-numeric: tabular-nums; }
 #over-stats tr:last-child td { padding-top: 10px; font-size: 16px; }
 #over-stats tr:last-child td:last-child { color: #ffd66b; }
+
+/* ===========================================================================
+   MOBILE VERSION
+   ===========================================================================
+   Selected from the title screen (or automatically on a touch device). The
+   canvas fills the whole screen with a control bar sitting above it, and
+   fitToWindow() in game.js works VIEW_H out from whatever height is left.
+
+   #hud and #screen are already siblings inside #stage, so the bar-above-canvas
+   layout is just a flex column plus an `order` swap — no elements move. */
+
+/* Which of the two control rows / help texts is showing. */
+.touch-row              { display: none; }
+.mobile-only            { display: none; }
+body.mobile .legend,
+body.mobile .desktop-only { display: none; }
+body.mobile .touch-row,
+body.mobile .mobile-only  { display: flex; }
+body.mobile .controls.mobile-only { display: grid; }
+body.mobile p.mobile-only { display: block; }
+
+body.mobile {
+  align-items: stretch;
+  justify-content: stretch;
+  /* Stop the page bouncing / pull-to-refresh when a swipe runs off the edge. */
+  overscroll-behavior: none;
+}
+
+body.mobile #stage {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  /* Edge to edge: the rounded card and its drop shadow only make sense when
+     the stage is floating in a desktop window. */
+  border-radius: 0;
+  box-shadow: none;
+}
+
+body.mobile #screen {
+  order: 1;
+  /* Hand every touch to our own listeners: no scrolling, no rubber-banding,
+     and no zoom on the double-tap that posts the letter. */
+  touch-action: none;
+}
+
+/* The control bar. 84px is BAR_H in game.js — keep the two in step. */
+body.mobile #hud {
+  order: 0;
+  position: static;
+  flex: 0 0 84px;
+  height: 84px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 7px;
+  padding: 6px 8px;
+  background: #10151c;
+  border-bottom: 1px solid rgba(255, 255, 255, .07);
+  pointer-events: auto;      /* the desktop HUD is click-through; this isn't */
+}
+
+/* Off the menu and end screen the bar has nothing to say — but it still has to
+   hold its 84px, or the canvas would grow and VIEW_H would jump about between
+   screens. So it goes invisible rather than away. */
+body.mobile #hud.hidden {
+  display: flex !important;
+  visibility: hidden;
+}
+
+body.mobile .hud-row { gap: 6px; }
+
+/* --- the four touch buttons --- */
+.touch-row {
+  gap: 7px;
+  align-items: stretch;
+}
+
+.tbtn {
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: .6px;
+  color: rgba(242, 244, 247, .6);
+  background: rgba(255, 255, 255, .07);
+  border: 0;
+  border-radius: 11px;
+  /* 44px is the smallest target that's comfortable under a thumb. */
+  min-width: 46px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 10px;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: background .14s, color .14s, opacity .14s;
+}
+.tbtn.grow   { flex: 1; }
+.tbtn:active { background: rgba(255, 255, 255, .16); }
+
+/* Standing at a mailbox or a front door — same gold as the desktop E chip. */
+#t-act.active { color: #1b2430; background: #ffd66b; }
+/* A dog wants a biscuit. Pink, so it reads as a different job. */
+#t-act.treat  { color: #2a1620; background: #ff9fbb; }
+
+#t-coffee.active { background: rgba(255, 214, 107, .22); }
+#t-coffee.spent  { opacity: .32; }
+#t-coffee-icon   { width: 30px; height: 26px; }
+
+/* --- Desktop / Mobile picker on the title screen --- */
+.modes { display: flex; gap: 8px; }
+
+.mode {
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: .5px;
+  color: rgba(242, 244, 247, .6);
+  background: rgba(255, 255, 255, .07);
+  border: 1px solid rgba(255, 255, 255, .09);
+  border-radius: 999px;
+  padding: 8px 18px;
+  min-height: 36px;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: background .14s, color .14s, border-color .14s;
+}
+.mode.on {
+  color: #1b2430;
+  background: #ffd66b;
+  border-color: #ffd66b;
+}
+
+/* --- Sideways phone: there'd be almost no street left to see. --- */
+#rotate { z-index: 5; }
+
+/* --- Squeezing the menu and end screen onto a phone-width stage --- */
+@media (max-width: 480px) {
+  .overlay { padding: 14px; gap: 8px; }
+  h1 { font-size: 32px; }
+  h2 { font-size: 22px; }
+  .tagline { font-size: 12.5px; }
+  .shifts { gap: 7px; }
+  .shift { padding: 11px 13px 10px; border-radius: 12px; }
+  .shift b  { font-size: 23px; }
+  .shift em { font-size: 9.5px; margin-top: 3px; }
+  .controls { font-size: 11.5px; gap: 5px; }
+  #over-stats { font-size: 12.5px; }
+  #over-stats td { padding: 4px 10px; }
+  #over-stats tr:last-child td { font-size: 15px; }
+}

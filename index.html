@@ -8,8 +8,9 @@
 </head>
 <body>
 
-<!-- #stage is sized by JS to an exact integer multiple of the 320x180 canvas,
-     so the HUD and overlays always line up with the pixels underneath. -->
+<!-- #stage is sized by fitToWindow() in game.js: a 200x150 box scaled to fit
+     the window on desktop, or the whole screen with a control bar on top in
+     mobile mode. The HUD and overlays are positioned against it either way. -->
 <div id="stage">
   <canvas id="screen"></canvas>
 
@@ -32,12 +33,30 @@
            scaled up by CSS, so it matches the rest of the art. -->
       <canvas id="coffee-icon" title="Coffee (C)"></canvas>
     </div>
+
+    <!-- The same four actions as buttons, for mobile mode. Only one of this
+         row and the legend above is ever visible. The deliver button lights up
+         from exactly the same game state as the E chip does. -->
+    <div class="touch-row">
+      <button id="t-act" class="tbtn grow">DELIVER</button>
+      <button id="t-coffee" class="tbtn" aria-label="Coffee">
+        <canvas id="t-coffee-icon"></canvas>
+      </button>
+      <button id="t-pause" class="tbtn" aria-label="Pause">&#10073;&#10073;</button>
+      <button id="t-quit" class="tbtn" aria-label="Quit">&#10005;</button>
+    </div>
   </div>
 
   <!-- ---------------- Menu ---------------- -->
   <div id="menu" class="overlay">
     <h1>MAIL ROUTE</h1>
     <p class="tagline">Empty the bag before the shift ends.</p>
+
+    <p class="label">Version</p>
+    <div class="modes">
+      <button class="mode" id="mode-desktop">Desktop</button>
+      <button class="mode" id="mode-mobile">Mobile</button>
+    </div>
 
     <p class="label">Pick your shift</p>
     <div class="shifts">
@@ -46,19 +65,26 @@
       <button class="shift" data-minutes="15"><b>15</b><span>min</span><em>115 houses</em></button>
     </div>
 
-    <div class="controls">
+    <div class="controls desktop-only">
       <div><kbd>&larr;</kbd><kbd>&uarr;</kbd><kbd>&darr;</kbd><kbd>&rarr;</kbd> walk <span class="dim">(or WASD)</span></div>
       <div><kbd>Space</kbd> hop</div>
       <div><kbd>E</kbd> deliver / treat dog</div>
       <div><kbd>C</kbd> coffee</div>
       <div><kbd>P</kbd> pause &nbsp; <kbd>R</kbd> quit</div>
     </div>
+
+    <div class="controls mobile-only">
+      <div>He never stops walking &mdash; <b>swipe</b> to turn him</div>
+      <div>He waits at each house &mdash; <b>double-tap</b> to post</div>
+      <div>Coffee, pause and quit are up top</div>
+    </div>
   </div>
 
   <!-- ---------------- Pause ---------------- -->
   <div id="paused" class="overlay hidden">
     <h2>PAUSED</h2>
-    <p class="hint"><kbd>P</kbd> to resume &middot; <kbd>R</kbd> to quit</p>
+    <p class="hint desktop-only"><kbd>P</kbd> to resume &middot; <kbd>R</kbd> to quit</p>
+    <p class="hint mobile-only">Tap the pause button again to resume</p>
   </div>
 
   <!-- ---------------- End of shift ---------------- -->
@@ -68,6 +94,13 @@
     <table id="over-stats"></table>
     <button id="again" class="shift wide">Play Again</button>
   </div>
+
+  <!-- Mobile mode only, and only when the phone is on its side: a wide, short
+       view would letterbox and there'd be almost no street left to see. -->
+  <div id="rotate" class="overlay hidden">
+    <h2>TURN YOUR PHONE</h2>
+    <p class="tagline">Mail Route runs up and down the street, so it needs the tall way round.</p>
+  </div>
 </div>
 
 <script src="art.js"></script>
@@ -75,5 +108,6 @@
 <script src="entities.js"></script>
 <script src="render.js"></script>
 <script src="game.js"></script>
+<script src="mobile.js"></script>
 </body>
 </html>
