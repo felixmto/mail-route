@@ -3,10 +3,14 @@
 A cute, blocky arcade game: you're a postman on a suburban round, racing to
 empty your mailbag before your shift ends.
 
-## Running it
+### ▶ [Play it in your browser](https://felixmto.github.io/mail-route/)
 
-No build step, no dependencies, nothing to install. Either double-click
-`index.html`, or serve the folder:
+No download, no install, nothing to sign up for — it runs entirely in the page.
+
+## Running it locally
+
+No build step and no dependencies. Either double-click `index.html`, or serve
+the folder:
 
     git clone https://github.com/felixmto/mail-route.git
     cd mail-route
