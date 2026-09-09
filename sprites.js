@@ -210,6 +210,34 @@ const MAILBOX = [
 ];
 
 // ---------------------------------------------------------------------------
+// The coffee cup shown at the side of the screen. Drawn in its normal palette
+// while you still have it, and in greys once you've drunk it.
+// ---------------------------------------------------------------------------
+const COFFEE = [
+  'mmmmmmmmm...',
+  'mjjjjjjjm...',
+  'mjjjjjjjmhh.',
+  'mjjjjjjjm..h',
+  'mjjjjjjjm..h',
+  'mjjjjjjjmhh.',
+  'mjjjjjjjm...',
+  '.mmmmmmm....',
+  '..mmmmm.....',
+];
+const COFFEE_PAL      = { m: '#f4efe4', j: '#6f4526', h: '#f4efe4' };
+const COFFEE_PAL_USED = { m: '#565b63', j: '#3b3f45', h: '#565b63' };
+
+// ---------------------------------------------------------------------------
+// A dog biscuit — pops out of your hand when you treat a dog.
+// ---------------------------------------------------------------------------
+const BISCUIT = [
+  '.ttt.',
+  'ttttt',
+  '.ttt.',
+];
+const BISCUIT_PAL = { t: '#e0b46a' };
+
+// ---------------------------------------------------------------------------
 // drawSprite — paint one sprite with its top-left corner at (x, y).
 // Coordinates are rounded to whole pixels so the art never lands on a half
 // pixel and turns blurry. Pass flip=true to mirror it horizontally.

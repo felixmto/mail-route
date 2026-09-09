@@ -24,7 +24,8 @@
     <!-- Control legend. The E lights up when you're standing somewhere you can
          actually post a letter, which is what the old floating prompt did. -->
     <div class="legend">
-      <span class="key" id="key-e"><kbd>E</kbd><span>deliver</span></span>
+      <span class="key" id="key-e"><kbd>E</kbd><span id="key-e-label">deliver</span></span>
+      <span class="key" id="key-c"><kbd>C</kbd><span>coffee</span></span>
       <span class="key"><kbd>P</kbd><span>pause</span></span>
       <span class="key"><kbd>R</kbd><span>quit</span></span>
     </div>
@@ -44,11 +45,11 @@
 
     <div class="controls">
       <div><kbd>&larr;</kbd><kbd>&uarr;</kbd><kbd>&darr;</kbd><kbd>&rarr;</kbd> walk <span class="dim">(or WASD)</span></div>
-      <div><kbd>Space</kbd> hop &mdash; a quick burst of speed</div>
-      <div><kbd>E</kbd> deliver &mdash; the legend up top lights up when you can</div>
-      <div><kbd>P</kbd> pause &nbsp; <kbd>R</kbd> quit to menu</div>
+      <div><kbd>Space</kbd> hop</div>
+      <div><kbd>E</kbd> deliver / treat dog</div>
+      <div><kbd>C</kbd> coffee</div>
+      <div><kbd>P</kbd> pause &nbsp; <kbd>R</kbd> quit</div>
     </div>
-    <p class="hint">Mailboxes at the kerb are easy. Fenced gardens mean a walk to the front door &mdash; and usually a dog. Mind the traffic when you cross.</p>
   </div>
 
   <!-- ---------------- Pause ---------------- -->
@@ -62,7 +63,7 @@
     <h2 id="over-title">SHIFT COMPLETE</h2>
     <p id="over-sub" class="tagline"></p>
     <table id="over-stats"></table>
-    <button id="again" class="shift wide">Back to the depot</button>
+    <button id="again" class="shift wide">Play Again</button>
   </div>
 </div>
 

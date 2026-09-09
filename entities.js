@@ -23,6 +23,15 @@ const CAR_PENALTY  = 6;
 const GRACE_BITE = 1.2;
 const GRACE_CAR  = 1.4;
 
+// How close a charging dog has to be before you can hand it a treat. It's
+// deliberately about the same as its biting range, so treating one is a nerve
+// test: hold your ground until it reaches you, or turn and run.
+const TREAT_RANGE = 24;
+
+// The coffee: one cup a shift, and it makes you noticeably quicker for a while.
+const COFFEE_DURATION = 60;   // seconds
+const COFFEE_BOOST    = 1.5;  // multiplier on your walking and hopping speed
+
 const PLAYER_W = 8;         // collision box at the feet — narrower than the
 const PLAYER_H = 6;         // sprite, which reads better from above
 
@@ -39,6 +48,7 @@ function makePostman(x, y) {
     hopCool: 0,
     stunT: 0,
     invulnT: 0,
+    speedMul: 1,           // raised while the coffee is working
     deliverCool: 0,
   };
 }
@@ -94,7 +104,7 @@ function updatePostman(p, input, world, dt) {
     const len = Math.hypot(dx, dy);
     dx /= len; dy /= len;
 
-    const speed = isAirborne(p) ? HOP_SPEED : WALK_SPEED;
+    const speed = (isAirborne(p) ? HOP_SPEED : WALK_SPEED) * p.speedMul;
 
     // Face whichever axis you're pushing hardest.
     if (Math.abs(dx) > Math.abs(dy)) p.facing = dx > 0 ? 'right' : 'left';
@@ -162,7 +172,23 @@ function hitsSolid(x, y, solids) {
 function updateDog(dog, p, dt) {
   dog.anim += dt * 5;
   if (dog.barkT > 0) dog.barkT -= dt;
+  if (dog.heartT > 0) dog.heartT -= dt;
   if (dog.cooldown > 0) dog.cooldown -= dt;
+
+  // A dog that's had a treat is friends for the rest of the shift. It pootles
+  // around its garden and never chases you again.
+  if (dog.happy) {
+    dog.thinkT -= dt;
+    if (dog.thinkT <= 0) {
+      const a = Math.random() * Math.PI * 2;
+      dog.targetX = clamp(dog.homeX + Math.cos(a) * dog.r * 0.4,
+                          BAND.leftYard[0] + 2, BAND.rightYard[1] - 2);
+      dog.targetY = dog.homeY + Math.sin(a) * dog.r * 0.4;
+      dog.thinkT = 2 + Math.random() * 2.5;
+    }
+    stepDogToward(dog, dog.targetX, dog.targetY, DOG_PATROL * 0.7, dt);
+    return;
+  }
 
   const toPlayer = Math.hypot(p.x - dog.x, p.y - dog.y);
   const fromHome = Math.hypot(p.x - dog.homeX, p.y - dog.homeY);
@@ -204,6 +230,11 @@ function updateDog(dog, p, dt) {
     tx = dog.targetX; ty = dog.targetY; speed = DOG_PATROL;
   }
 
+  stepDogToward(dog, tx, ty, speed, dt);
+}
+
+// Walk a dog towards a point at a given speed.
+function stepDogToward(dog, tx, ty, speed, dt) {
   const dx = tx - dog.x, dy = ty - dog.y;
   const dist = Math.hypot(dx, dy);
   if (dist > 1) {

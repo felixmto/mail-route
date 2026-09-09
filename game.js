@@ -26,6 +26,8 @@ const el = {
   sub:     document.getElementById('over-sub'),
   stats:   document.getElementById('over-stats'),
   keyE:    document.getElementById('key-e'),
+  keyELabel: document.getElementById('key-e-label'),
+  keyC:    document.getElementById('key-c'),
 };
 
 // The whole game lives in this one object. It's also exposed as window.__game
@@ -41,7 +43,9 @@ const g = {
   mailLeft: 0,
   score: 0,
   promptHouse: null,      // the house you're currently standing at, if any
-  stats: { bites: 0, hitByCar: 0, hops: 0 },
+  treatDog: null,         // a dog close enough to hand a biscuit to
+  coffee: { available: true, activeT: 0 },
+  stats: { bites: 0, hitByCar: 0, hops: 0, treats: 0 },
 };
 
 // ---------------------------------------------------------------------------
@@ -70,7 +74,10 @@ window.addEventListener('keydown', (e) => {
       if (g.state === 'PLAYING') input.jumpPressed = true;
       break;
     case 'e': case 'E': case 'Enter':
-      if (g.state === 'PLAYING') tryDeliver();
+      if (g.state === 'PLAYING') useE();
+      break;
+    case 'c': case 'C':
+      if (g.state === 'PLAYING') drinkCoffee();
       break;
     case 'p': case 'P':
       if (g.state === 'PLAYING') setState('PAUSED');
@@ -106,7 +113,9 @@ function startShift(minutes) {
   g.mailLeft = g.world.totalMail;
   g.score = 0;
   g.promptHouse = null;
-  g.stats = { bites: 0, hitByCar: 0, hops: 0 };
+  g.treatDog = null;
+  g.coffee = { available: true, activeT: 0 };
+  g.stats = { bites: 0, hitByCar: 0, hops: 0, treats: 0 };
   setState('PLAYING');
 }
 
@@ -120,6 +129,7 @@ function setState(next) {
 
 function endShift(won) {
   g.promptHouse = null;   // so the legend's E goes dark on the end screen
+  g.treatDog = null;
 
   // A finished shift scores the mail you delivered, plus 10 points for every
   // second you had left on the clock.
@@ -127,17 +137,24 @@ function endShift(won) {
   const bonus = won ? Math.floor(g.timeLeft) * 10 : 0;
   g.score += bonus;
 
+  const shiftLength = g.world.minutes * 60;
+  const taken = shiftLength - Math.max(0, g.timeLeft);
+
   el.title.textContent = won ? 'SHIFT COMPLETE' : 'SHIFT OVER';
   el.sub.textContent = won
-    ? 'Bag empty with time to spare. Nice round.'
+    ? `All ${delivered} houses done in ${formatTime(taken)}.`
     : `The clock beat you with ${g.mailLeft} letter${g.mailLeft === 1 ? '' : 's'} still in the bag.`;
 
   const rows = [
-    ['Delivered', `${delivered} / ${g.world.totalMail}`],
-    ['Time left', won ? formatTime(g.timeLeft) : '0:00'],
+    ['Houses reached', `${delivered} / ${g.world.totalMail}`],
+    ['Time taken', formatTime(taken)],
+  ];
+  if (won) rows.push(['Time left', formatTime(g.timeLeft)]);
+  rows.push(
+    ['Dogs befriended', g.stats.treats],
     ['Dog bites', g.stats.bites],
     ['Hit by a car', g.stats.hitByCar],
-  ];
+  );
   if (won) rows.push(['Time bonus', `+${bonus}`]);
   rows.push(['Score', g.score]);
 
@@ -163,13 +180,61 @@ function findDeliverableHouse() {
   return null;
 }
 
-function tryDeliver() {
+// Which dog (if any) is close enough to hand a biscuit to right now?
+function findTreatableDog() {
   const p = g.player;
-  // No posting mail mid-air, mid-stumble, or twice in one press.
-  if (isAirborne(p) || p.stunT > 0 || p.deliverCool > 0) return;
+  for (const dog of g.world.dogs) {
+    if (dog.happy) continue;
+    if (Math.abs(dog.y - p.y) > TREAT_RANGE + 10) continue;   // cheap reject
+    if (Math.hypot(dog.x - p.x, dog.y - p.y) <= TREAT_RANGE) return dog;
+  }
+  return null;
+}
 
-  const h = g.promptHouse;
-  if (!h) return;
+// E does whichever of the two jobs matters here. A dog bearing down on you is
+// the more urgent of the two, so treating wins if both are possible.
+function useE() {
+  const p = g.player;
+  if (isAirborne(p) || p.stunT > 0 || p.deliverCool > 0) return;
+  if (g.treatDog) giveTreat(g.treatDog);
+  else if (g.promptHouse) deliverTo(g.promptHouse);
+}
+
+function giveTreat(dog) {
+  const p = g.player;
+  dog.happy = true;
+  dog.state = 'patrol';
+  dog.barkT = 0;
+  dog.heartT = 1.4;
+  dog.thinkT = 0;
+  p.deliverCool = 0.25;
+  g.stats.treats++;
+  g.score += 50;
+
+  g.effects.push({
+    type: 'biscuit', x: (p.x + dog.x) / 2, y: (p.y + dog.y) / 2 - 6,
+    t: 0.5, life: 0.5,
+  });
+  g.effects.push({
+    type: 'popup', text: '+50',
+    x: p.x - 6, y: p.y - 22, t: 0.9, life: 0.9, colour: '#ffd2e0',
+  });
+}
+
+function drinkCoffee() {
+  if (!g.coffee.available) return;
+  const p = g.player;
+  if (p.stunT > 0) return;
+  g.coffee.available = false;
+  g.coffee.activeT = COFFEE_DURATION;
+  g.effects.push({
+    type: 'popup', text: 'COFFEE',
+    x: p.x - 12, y: p.y - 24, t: 1.2, life: 1.2, colour: '#ffe08a',
+  });
+}
+
+function deliverTo(h) {
+  const p = g.player;
 
   h.delivered = true;
   p.deliverCool = 0.25;
@@ -232,7 +297,7 @@ function update(dt) {
   for (const dog of w.dogs) {
     updateDog(dog, p, dt);
 
-    if (dog.state !== 'chase' || dog.cooldown > 0) continue;
+    if (dog.happy || dog.state !== 'chase' || dog.cooldown > 0) continue;
     if (Math.hypot(dog.x - p.x, dog.y - p.y) > 7) continue;
     if (isAirborne(p) || p.invulnT > 0) continue;
 
@@ -253,8 +318,20 @@ function update(dt) {
     });
   }
 
-  // --- Delivery prompt ----------------------------------------------------
-  g.promptHouse = (isAirborne(p) || p.stunT > 0) ? null : findDeliverableHouse();
+  // --- Coffee ---------------------------------------------------------------
+  if (g.coffee.activeT > 0) {
+    g.coffee.activeT = Math.max(0, g.coffee.activeT - dt);
+    // A puff of steam off his shoulders while it's working.
+    if (Math.random() < dt * 8) {
+      g.effects.push({ type: 'dust', x: p.x, y: p.y - 4, t: 0.3, life: 0.3 });
+    }
+  }
+  p.speedMul = g.coffee.activeT > 0 ? COFFEE_BOOST : 1;
+
+  // --- What will E do right now? -------------------------------------------
+  const busy = isAirborne(p) || p.stunT > 0;
+  g.treatDog = busy ? null : findTreatableDog();
+  g.promptHouse = busy ? null : findDeliverableHouse();
 
   // --- Mailbox flags easing down after a delivery --------------------------
   for (const h of w.houses) {
@@ -340,10 +417,19 @@ function drawHud() {
   el.mail.textContent = `MAIL ${g.mailLeft}/${g.world.totalMail}`;
   el.score.textContent = g.score;
 
-  // The E in the legend lights up when there's a letter to post right here.
+  // The E in the legend lights up when there's something to do right here, and
+  // says which — a letter to post, or a biscuit to hand over.
   // Guarded because drawHud runs every frame: if the markup ever goes missing,
   // a thrown error here would kill the whole game loop rather than just the HUD.
-  if (el.keyE) el.keyE.classList.toggle('active', g.promptHouse !== null);
+  if (el.keyE) {
+    el.keyE.classList.toggle('active', g.promptHouse !== null || g.treatDog !== null);
+    el.keyE.classList.toggle('treat', g.treatDog !== null);
+  }
+  if (el.keyELabel) el.keyELabel.textContent = g.treatDog ? 'treat' : 'deliver';
+  if (el.keyC) {
+    el.keyC.classList.toggle('active', g.coffee.activeT > 0);
+    el.keyC.classList.toggle('spent', !g.coffee.available && g.coffee.activeT <= 0);
+  }
 
   const done = 1 - g.mailLeft / g.world.totalMail;
   el.fill.style.width = (done * 100).toFixed(1) + '%';

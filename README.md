@@ -24,13 +24,25 @@ then open http://localhost:8124
 | --- | --- |
 | Arrow keys / WASD | Walk |
 | Space | Hop — a burst of speed, and dogs can't touch you mid-air |
-| E (or Enter) | Deliver |
+| E (or Enter) | Deliver a letter, or give a dog a treat |
+| C | Drink your coffee |
 | P | Pause |
 | R | Quit to the menu |
 
 The controls sit in a legend across the top of the play area. The **E** lights up
-gold whenever you're standing somewhere you can actually post a letter, so you
-never have to guess whether you're close enough.
+when there's something to do where you're standing, and says which: gold for
+*deliver*, pink for *treat*. So you never have to guess whether you're close
+enough.
+
+**Treats.** When a dog charges you, you can stand your ground and press E to hand
+it a biscuit instead of running. It's friends for the rest of the shift after
+that — it stops chasing and pootles about its garden with a little heart over it.
+Treating is worth 50 points, but you have to let the dog get right up to you,
+which is the same range at which it would bite.
+
+**Coffee.** One cup a shift. Press C and you walk half again as fast for a
+minute. The cup sits at the right-hand edge of the screen with the seconds
+counting down, and greys out once it's gone.
 
 The game is silent by design — there is no audio code in it at all.
 
@@ -65,8 +77,10 @@ Everything worth tuning lives at the top of a file, with a comment.
   cars and how fast they go. Cars much faster than this stop being fair,
   because you can't see far enough up the road to react.
 - **`entities.js`, the constants at the top** — walking speed, hop height and
-  duration, dog speed and eyesight (`DOG_AGGRO`), and what a dog bite or a car
-  costs you (`BITE_PENALTY`, `CAR_PENALTY`).
+  duration, dog speed and eyesight (`DOG_AGGRO`), how close a dog has to be
+  before you can treat it (`TREAT_RANGE`), how long and how strong the coffee is
+  (`COFFEE_DURATION`, `COFFEE_BOOST`), and what a dog bite or a car costs you
+  (`BITE_PENALTY`, `CAR_PENALTY`).
 
 A rough guide to the pacing: on a clear road the round takes about 2.8 seconds
 per house. Traffic roughly doubles that once you count waiting at the kerb, so

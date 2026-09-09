@@ -114,6 +114,15 @@ html, body {
 
 /* Standing at a mailbox or a front door. */
 #key-e.active { color: #ffe08a; border-color: rgba(255, 224, 138, .5); }
+
+/* A dog is close enough to treat — pink, so it reads as a different action. */
+#key-e.treat { color: #ff9fbb; border-color: rgba(255, 159, 187, .5); }
+#key-e.treat kbd { background: #ff9fbb; box-shadow: 0 0 0 2px rgba(255, 159, 187, .3); }
+
+/* The coffee: bright while it's working, dimmed once it's gone. */
+#key-c.active { color: #ffe08a; border-color: rgba(255, 224, 138, .5); }
+#key-c.active kbd { background: #ffe08a; }
+#key-c.spent { opacity: .38; }
 #key-e.active kbd {
   background: #ffe08a;
   color: #1b2430;

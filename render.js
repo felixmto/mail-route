@@ -62,6 +62,42 @@ function drawWorld(ctx, g) {
   ctx.restore();
 
   drawCloudShadows(ctx, g);
+  if (g.state === 'PLAYING' || g.state === 'PAUSED') drawCoffee(ctx, g);
+}
+
+// ---------------------------------------------------------------------------
+// The coffee, tucked against the right-hand edge of the screen. Full colour
+// while you still have it, greyed out once it's drunk, with the seconds left
+// counting down underneath while it's working.
+// ---------------------------------------------------------------------------
+function drawCoffee(ctx, g) {
+  const x = VIEW_W - 17;
+  const y = 34;
+  const active = g.coffee.activeT > 0;
+  const used = !g.coffee.available;
+
+  // A little panel behind it so it reads against grass or tarmac alike.
+  px(ctx, x - 3, y - 9, 18, active ? 30 : 24, 'rgba(14,20,28,0.62)');
+
+  // Steam, only while it's still worth drinking.
+  if (!used) {
+    ctx.fillStyle = '#e8e2d2';
+    for (let i = 0; i < 3; i++) {
+      const t = g.time * 2.2 + i * 1.5;
+      const sx = x + 2 + i * 3 + Math.round(Math.sin(t) * 1.2);
+      const sy = y - 4 - ((Math.floor(t * 3) + i) % 4);
+      ctx.fillRect(sx, sy, 1, 2);
+    }
+  }
+
+  drawSprite(ctx, COFFEE, x, y, used ? COFFEE_PAL_USED : COFFEE_PAL);
+
+  if (active) {
+    // Seconds remaining, so you can feel the boost running out.
+    drawTinyText(ctx, String(Math.ceil(g.coffee.activeT)), x + 1, y + 19, '#ffe08a');
+  } else {
+    drawTinyText(ctx, 'C', x + 4, y + 17, used ? '#6b7079' : '#f4efe4');
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -298,11 +334,38 @@ function drawDog(ctx, dog) {
   drawSprite(ctx, DOG[frame], dog.x - 7, dog.y - 10, DOG_PAL, dog.facing < 0);
 
   // "!" bubble when it first spots you.
-  if (dog.barkT > 0) {
+  if (dog.barkT > 0 && !dog.happy) {
     px(ctx, dog.x - 3, dog.y - 22, 7, 9, '#ffffff');
     px(ctx, dog.x - 1, dog.y - 20, 2, 4, '#c8362c');
     px(ctx, dog.x - 1, dog.y - 15, 2, 2, '#c8362c');
     px(ctx, dog.x - 1, dog.y - 13, 2, 2, '#ffffff');
+  }
+
+  // A heart, briefly, the moment it gets its biscuit — then a small one
+  // afterwards so you can tell at a glance which dogs are already friends.
+  if (dog.happy) {
+    const big = dog.heartT > 0;
+    const hy = dog.y - 18 - (big ? Math.round((1.4 - dog.heartT) * 4) : 0);
+    drawHeart(ctx, dog.x, hy, big ? 1 : 0);
+  }
+}
+
+// A tiny pixel heart. size 0 is the small resting one, 1 the celebratory one.
+function drawHeart(ctx, cx, cy, size) {
+  const c = '#ff8fae';
+  const x = Math.round(cx), y = Math.round(cy);
+  if (size === 0) {
+    px(ctx, x - 2, y, 2, 1, c); px(ctx, x + 1, y, 2, 1, c);
+    px(ctx, x - 2, y + 1, 5, 1, c);
+    px(ctx, x - 1, y + 2, 3, 1, c);
+    px(ctx, x, y + 3, 1, 1, c);
+  } else {
+    px(ctx, x - 3, y, 2, 2, c); px(ctx, x + 2, y, 2, 2, c);
+    px(ctx, x - 4, y + 1, 9, 2, c);
+    px(ctx, x - 3, y + 3, 7, 1, c);
+    px(ctx, x - 2, y + 4, 5, 1, c);
+    px(ctx, x - 1, y + 5, 3, 1, c);
+    px(ctx, x, y + 6, 1, 1, c);
   }
 }
 
@@ -365,6 +428,10 @@ function drawEffects(ctx, g) {
     if (e.type === 'popup') {
       ctx.globalAlpha = Math.min(1, life * 2.2);
       drawTinyText(ctx, e.text, e.x, e.y - (1 - life) * 14, e.colour);
+      ctx.globalAlpha = 1;
+    } else if (e.type === 'biscuit') {
+      ctx.globalAlpha = Math.min(1, life * 2);
+      drawSprite(ctx, BISCUIT, e.x - 2, e.y - (1 - life) * 5, BISCUIT_PAL);
       ctx.globalAlpha = 1;
     } else if (e.type === 'dust') {
       ctx.globalAlpha = life;
