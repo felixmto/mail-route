@@ -558,7 +558,9 @@ function fitToWindow() {
       // A wide window. Nearly always someone on a desktop having a look at the
       // mobile version, so give them a phone-shaped box in the middle of the
       // window rather than squashing the street into a letterbox.
-      const boxH = Math.max(320, Math.min(winH - 24, 860));
+      // Never taller than the window itself: a floor that overflows would
+      // push the menu off the top of the page with no way to scroll to it.
+      const boxH = Math.min(winH, Math.max(320, Math.min(winH - 24, 860)));
       cssW = Math.round(boxH * PHONE_ASPECT);
       cssH = Math.max(120, boxH - BAR_H);
       el.stage.style.width = cssW + 'px';
