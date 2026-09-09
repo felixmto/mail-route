@@ -62,42 +62,6 @@ function drawWorld(ctx, g) {
   ctx.restore();
 
   drawCloudShadows(ctx, g);
-  if (g.state === 'PLAYING' || g.state === 'PAUSED') drawCoffee(ctx, g);
-}
-
-// ---------------------------------------------------------------------------
-// The coffee, tucked against the right-hand edge of the screen. Full colour
-// while you still have it, greyed out once it's drunk, with the seconds left
-// counting down underneath while it's working.
-// ---------------------------------------------------------------------------
-function drawCoffee(ctx, g) {
-  const x = VIEW_W - 17;
-  const y = 34;
-  const active = g.coffee.activeT > 0;
-  const used = !g.coffee.available;
-
-  // A little panel behind it so it reads against grass or tarmac alike.
-  px(ctx, x - 3, y - 9, 18, active ? 30 : 24, 'rgba(14,20,28,0.62)');
-
-  // Steam, only while it's still worth drinking.
-  if (!used) {
-    ctx.fillStyle = '#e8e2d2';
-    for (let i = 0; i < 3; i++) {
-      const t = g.time * 2.2 + i * 1.5;
-      const sx = x + 2 + i * 3 + Math.round(Math.sin(t) * 1.2);
-      const sy = y - 4 - ((Math.floor(t * 3) + i) % 4);
-      ctx.fillRect(sx, sy, 1, 2);
-    }
-  }
-
-  drawSprite(ctx, COFFEE, x, y, used ? COFFEE_PAL_USED : COFFEE_PAL);
-
-  if (active) {
-    // Seconds remaining, so you can feel the boost running out.
-    drawTinyText(ctx, String(Math.ceil(g.coffee.activeT)), x + 1, y + 19, '#ffe08a');
-  } else {
-    drawTinyText(ctx, 'C', x + 4, y + 17, used ? '#6b7079' : '#f4efe4');
-  }
 }
 
 // ---------------------------------------------------------------------------

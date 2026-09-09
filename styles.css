@@ -123,6 +123,20 @@ html, body {
 #key-c.active { color: #ffe08a; border-color: rgba(255, 224, 138, .5); }
 #key-c.active kbd { background: #ffe08a; }
 #key-c.spent { opacity: .38; }
+
+/* The cup sits alongside the key chips with no panel behind it — just the
+   sprite on the street. Scaled by a whole number so the pixels stay square. */
+#coffee-icon {
+  width: 24px;
+  height: 18px;
+  margin-left: 2px;
+  background: none;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, .75));
+  transition: opacity .15s;
+}
+#coffee-icon.spent { opacity: .45; }
 #key-e.active kbd {
   background: #ffe08a;
   color: #1b2430;

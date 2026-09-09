@@ -28,7 +28,24 @@ const el = {
   keyE:    document.getElementById('key-e'),
   keyELabel: document.getElementById('key-e-label'),
   keyC:    document.getElementById('key-c'),
+  keyCLabel: null,   // filled in below, once we know the chip exists
+  coffeeIcon: document.getElementById('coffee-icon'),
 };
+if (el.keyC) el.keyCLabel = el.keyC.querySelector('span');
+
+// The cup icon is the same pixel art as everything else, painted into its own
+// little 12x9 canvas and blown up by CSS. Repainted only when it changes state,
+// since drawHud runs every frame.
+const coffeeIconCtx = el.coffeeIcon ? el.coffeeIcon.getContext('2d') : null;
+if (coffeeIconCtx) coffeeIconCtx.imageSmoothingEnabled = false;
+let coffeeIconPainted = null;
+
+function paintCoffeeIcon(spent) {
+  if (!coffeeIconCtx || coffeeIconPainted === spent) return;
+  coffeeIconPainted = spent;
+  coffeeIconCtx.clearRect(0, 0, el.coffeeIcon.width, el.coffeeIcon.height);
+  drawSprite(coffeeIconCtx, COFFEE, 0, 0, spent ? COFFEE_PAL_USED : COFFEE_PAL);
+}
 
 // The whole game lives in this one object. It's also exposed as window.__game
 // at the bottom of the file, which makes it easy to poke at from the console.
@@ -426,10 +443,19 @@ function drawHud() {
     el.keyE.classList.toggle('treat', g.treatDog !== null);
   }
   if (el.keyELabel) el.keyELabel.textContent = g.treatDog ? 'treat' : 'deliver';
+  const brewing = g.coffee.activeT > 0;
+  const spent = !g.coffee.available && !brewing;
   if (el.keyC) {
-    el.keyC.classList.toggle('active', g.coffee.activeT > 0);
-    el.keyC.classList.toggle('spent', !g.coffee.available && g.coffee.activeT <= 0);
+    el.keyC.classList.toggle('active', brewing);
+    el.keyC.classList.toggle('spent', spent);
   }
+  // While it's working the chip counts the seconds down instead of saying
+  // "coffee", which is where the old timer under the cup went.
+  if (el.keyCLabel) {
+    el.keyCLabel.textContent = brewing ? Math.ceil(g.coffee.activeT) + 's' : 'coffee';
+  }
+  if (el.coffeeIcon) el.coffeeIcon.classList.toggle('spent', spent);
+  paintCoffeeIcon(spent);
 
   const done = 1 - g.mailLeft / g.world.totalMail;
   el.fill.style.width = (done * 100).toFixed(1) + '%';
@@ -504,6 +530,7 @@ g.player = makePostman(ROAD_MID, 60);
 g.camera.y = 40;
 g.mailLeft = g.world.totalMail;
 
+paintCoffeeIcon(false);
 setState('MENU');
 requestAnimationFrame(frame);
 

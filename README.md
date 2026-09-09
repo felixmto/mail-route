@@ -41,8 +41,9 @@ Treating is worth 50 points, but you have to let the dog get right up to you,
 which is the same range at which it would bite.
 
 **Coffee.** One cup a shift. Press C and you walk half again as fast for a
-minute. The cup sits at the right-hand edge of the screen with the seconds
-counting down, and greys out once it's gone.
+minute. The cup sits alongside the key legend at the top of the screen; while
+it's working the C chip counts the seconds down, and the cup greys out once
+it's gone.
 
 The game is silent by design — there is no audio code in it at all.
 
