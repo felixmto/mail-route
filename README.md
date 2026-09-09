@@ -49,6 +49,10 @@ The game is silent by design — there is no audio code in it at all.
 
 The street runs up and down the screen and the houses are off to your left and
 right, so you spend the round working your way up the road and crossing it.
+There are trees along both verges and neighbours out on the pavement and in
+their front gardens. None of it is solid — you walk under the canopies and
+straight past the neighbours — it's there to stop the street feeling deserted,
+and deliberately can't change how long a round takes.
 Pick a 5, 10 or 15 minute shift. Each house needs one letter:
 
 - **Curbside mailboxes** are easy — walk to the box on the pavement and press E.
@@ -74,9 +78,12 @@ Everything worth tuning lives at the top of a file, with a comment.
   This is the main dial.
 - **`world.js`, `HOUSE_PITCH` (~line 48)** — how far apart houses are, and so
   how much walking the route involves.
-- **`world.js`, `generateTraffic` / `makeCar` (~line 218)** — the gap between
-  cars and how fast they go. Cars much faster than this stop being fair,
-  because you can't see far enough up the road to react.
+- **`world.js`, `generateTraffic` / `makeCar`** — the gap between cars and how
+  fast they go. Cars much faster than this stop being fair, because you can't
+  see far enough up the road to react.
+- **`world.js`, `generateTrees` / `generateNeighbours`** — how busy the street
+  looks. Both work off `routeLength / n`, so a smaller `n` means more of them.
+  Purely cosmetic: neither is solid and neither is worth points.
 - **`entities.js`, the constants at the top** — walking speed, hop height and
   duration, dog speed and eyesight (`DOG_AGGRO`), how close a dog has to be
   before you can treat it (`TREAT_RANGE`), how long and how strong the coffee is

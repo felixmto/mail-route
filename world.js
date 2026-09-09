@@ -98,12 +98,21 @@ function generateRoute(minutes) {
   // --- Traffic ------------------------------------------------------------
   const cars = generateTraffic(rng, routeLength);
 
+  // --- Scenery: trees on the verges, neighbours out and about -------------
+  // Neither of these is solid. They're there to make the street feel lived in,
+  // and keeping them walk-through means they can't wall off a delivery or
+  // change how long a round takes.
+  const trees = generateTrees(rng, houses, solids, routeLength);
+  const neighbours = generateNeighbours(rng, houses, routeLength);
+
   return {
     minutes,
     houses,
     solids,
     dogs,
     cars,
+    trees,
+    neighbours,
     routeLength,
     totalMail: houses.length,
   };
@@ -251,6 +260,131 @@ function makeCar(rng, y, dir) {
     palette: CAR_COLOURS[Math.floor(rng() * CAR_COLOURS.length)],
     honkT: 0,
   };
+}
+
+
+// ---------------------------------------------------------------------------
+// Trees. They go on the grass either side of the street — in the gaps between
+// houses and around the front gardens — never on the pavement, the road, or
+// across the path you walk to a front door.
+//
+// You walk underneath the canopy rather than around it: they're sorted into the
+// scene by the foot of the trunk, so you pass behind a tree when you're above
+// it and in front when you're below.
+// ---------------------------------------------------------------------------
+const TREE_TINTS = [
+  { light: '#7cc46a', mid: '#5da356', dark: '#47823f' },
+  { light: '#8fcf72', mid: '#6cae5c', dark: '#528c45' },
+  { light: '#6fbf7d', mid: '#519c62', dark: '#3d7c4c' },
+  { light: '#a3d177', mid: '#82b45e', dark: '#658f48' },
+];
+
+function generateTrees(rng, houses, solids, routeLength) {
+  const trees = [];
+  const target = Math.floor(routeLength / 34);
+  let attempts = 0;
+
+  while (trees.length < target && attempts < target * 40) {
+    attempts++;
+    const left = rng() < 0.5;
+    // Grass only: never the pavement, never the road.
+    const x = left ? 7 + rng() * 47 : 146 + rng() * 47;
+    const y = 30 + rng() * (routeLength - 60);
+    const size = 6.5 + rng() * 4;
+
+    // Don't plant one inside a house or a fence.
+    if (!clearOfSolids(x, y, size * 0.55, solids)) continue;
+
+    // Don't block a garden path, a doorway or a mailbox: those all sit level
+    // with the middle of a house, so just stay clear of that line.
+    let blocksAnApproach = false;
+    for (const h of houses) {
+      if (h.side !== (left ? 'left' : 'right')) continue;
+      if (Math.abs(h.cy - y) < 12) { blocksAnApproach = true; break; }
+    }
+    if (blocksAnApproach) continue;
+
+    // Give them room to breathe.
+    if (trees.some(t => Math.hypot(t.x - x, t.y - y) < 14)) continue;
+
+    trees.push({
+      x, y, size,
+      tint: TREE_TINTS[Math.floor(rng() * TREE_TINTS.length)],
+      lean: (rng() - 0.5) * 0.9,        // a slight tilt, so they aren't clones
+      sway: rng() * Math.PI * 2,        // where in its sway the tree starts
+    });
+  }
+  return trees;
+}
+
+// Is a small box around (x, y) free of every solid rectangle?
+function clearOfSolids(x, y, pad, solids) {
+  for (const s of solids) {
+    if (x + pad > s.x && x - pad < s.x + s.w &&
+        y + pad > s.y && y - pad < s.y + s.h) return false;
+  }
+  return true;
+}
+
+// ---------------------------------------------------------------------------
+// Neighbours. Some stroll up and down the pavement, others potter about in
+// their own front garden. They don't get in your way — you walk straight past
+// them — they're just there so the street isn't deserted.
+// ---------------------------------------------------------------------------
+const SKIN  = ['#f2c9a0', '#e0a878', '#c98c5c', '#8d5a3b', '#66412a', '#f7d9b8'];
+const HAIR  = ['#3a2a1e', '#6b4423', '#221c18', '#8a6a3a', '#a8a29b', '#c96f3f'];
+const SHIRT = ['#e0685f', '#4e9fd6', '#5fbe86', '#e8b54f', '#9a7bc8', '#e2879f',
+               '#4fb3a8', '#f0f0e8', '#6c7a8a'];
+const PANTS = ['#3a4557', '#5a4636', '#2f3c63', '#6b6f78', '#43524a'];
+
+function generateNeighbours(rng, houses, routeLength) {
+  const neighbours = [];
+  const target = Math.floor(routeLength / 95);
+
+  // About a third of them are stood in a front garden, the rest are out
+  // walking. Only houses without a fence get a garden neighbour, so nobody
+  // ends up trapped behind their own pickets.
+  const openHouses = houses.filter(h => h.type === 'mailbox');
+  shuffle(openHouses, rng);
+  let openIndex = 0;
+
+  for (let i = 0; i < target; i++) {
+    const inGarden = rng() < 0.35 && openIndex < openHouses.length;
+    let x, y, roam;
+
+    if (inGarden) {
+      const h = openHouses[openIndex++];
+      const left = h.side === 'left';
+      x = left ? h.x1 + 5 : h.x0 - 5;
+      y = h.cy + (rng() - 0.5) * (h.depth - 14);
+      roam = 7;
+    } else {
+      const left = rng() < 0.5;
+      // Pavement only, which has nothing solid on it to walk through.
+      x = left ? BAND.leftWalk[0] + 2 + rng() * 7
+               : BAND.rightWalk[0] + 2 + rng() * 7;
+      y = 40 + rng() * (routeLength - 80);
+      roam = 26;
+    }
+
+    neighbours.push({
+      x, y,
+      homeX: x, homeY: y,
+      roam,
+      targetX: x, targetY: y,
+      thinkT: rng() * 2,
+      speed: 9 + rng() * 7,
+      walking: false,
+      facing: rng() < 0.5 ? 'down' : 'up',
+      anim: rng() * 2,
+      height: 14.5 + rng() * 2.5,
+      skin: SKIN[Math.floor(rng() * SKIN.length)],
+      hair: HAIR[Math.floor(rng() * HAIR.length)],
+      shirt: SHIRT[Math.floor(rng() * SHIRT.length)],
+      pants: PANTS[Math.floor(rng() * PANTS.length)],
+    });
+  }
+  return neighbours;
 }
 
 // ---------------------------------------------------------------------------

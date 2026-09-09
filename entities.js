@@ -266,4 +266,43 @@ function carHits(car, p) {
 }
 
 // ---------------------------------------------------------------------------
+// Neighbours. They amble between spots near where they started and stop for a
+// breather now and then. Nothing about them affects the round — no collision,
+// no scoring — so they can never make a shift harder or easier.
+// ---------------------------------------------------------------------------
+function updateNeighbour(n, dt) {
+  n.thinkT -= dt;
+
+  if (n.thinkT <= 0) {
+    if (n.walking) {
+      // Just arrived somewhere: stand about for a moment.
+      n.walking = false;
+      n.thinkT = 1 + Math.random() * 3.5;
+    } else {
+      // Pick somewhere new within their patch.
+      n.walking = true;
+      n.thinkT = 2 + Math.random() * 3;
+      const a = Math.random() * Math.PI * 2;
+      const r = Math.random() * n.roam;
+      n.targetX = n.homeX + Math.cos(a) * r * 0.35;   // mostly up and down
+      n.targetY = n.homeY + Math.sin(a) * r;
+    }
+  }
+
+  if (!n.walking) { n.anim = 0; return; }
+
+  const dx = n.targetX - n.x, dy = n.targetY - n.y;
+  const dist = Math.hypot(dx, dy);
+  if (dist < 1) { n.walking = false; n.anim = 0; return; }
+
+  n.x += (dx / dist) * n.speed * dt;
+  n.y += (dy / dist) * n.speed * dt;
+  n.anim += dt * (n.speed / 3.4);
+
+  // Face whichever way they're mostly heading.
+  if (Math.abs(dx) > Math.abs(dy)) n.facing = dx > 0 ? 'right' : 'left';
+  else n.facing = dy > 0 ? 'down' : 'up';
+}
+
+// ---------------------------------------------------------------------------
 function clamp(v, lo, hi) { return v < lo ? lo : v > hi ? hi : v; }

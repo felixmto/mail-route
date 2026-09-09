@@ -317,6 +317,9 @@ function update(dt) {
     });
   }
 
+  // --- Neighbours (scenery: they don't collide with anything) --------------
+  for (const n of w.neighbours) updateNeighbour(n, dt);
+
   // --- Dogs ---------------------------------------------------------------
   for (const dog of w.dogs) {
     updateDog(dog, p, dt);

@@ -32,6 +32,16 @@ function drawWorld(ctx, g) {
     if (dog.y < top || dog.y > bot) continue;
     drawables.push({ y: dog.y, draw: () => drawDog(ctx, dog) });
   }
+  for (const n of g.world.neighbours) {
+    if (n.y < top || n.y > bot) continue;
+    drawables.push({ y: n.y, draw: () => drawNeighbour(ctx, n) });
+  }
+  // Trees sort by the foot of the trunk, so you pass behind one when you're
+  // above it and in front of it when you're below — you walk under the canopy.
+  for (const t of g.world.trees) {
+    if (t.y < top || t.y > bot + 30) continue;
+    drawables.push({ y: t.y, draw: () => drawTree(ctx, t, g.time) });
+  }
   drawables.push({ y: g.player.y, draw: () => drawPostman(ctx, g.player) });
 
   drawables.sort((a, b) => a.y - b.y);
@@ -420,6 +430,96 @@ function drawHeart(ctx, cx, cy, r) {
   ctx.closePath();
   ctx.fillStyle = C.pink;
   ctx.fill();
+  ctx.restore();
+}
+
+// ---------------------------------------------------------------------------
+// A tree: a trunk with a cluster of overlapping blobs for the canopy. The whole
+// crown sways very gently, each tree slightly out of step with its neighbours.
+// ---------------------------------------------------------------------------
+function drawTree(ctx, t, time) {
+  const s = t.size;
+  const sway = Math.sin(time * 0.7 + t.sway) * (s * 0.035);
+  const cx = t.x + t.lean * s * 0.3 + sway;
+  const cy = t.y - s * 1.55;
+
+  // Shadow on the grass, thrown slightly to one side.
+  ellipse(ctx, t.x + s * 0.22, t.y - s * 0.06, s * 0.85, s * 0.34,
+          'rgba(38, 54, 32, 0.20)');
+
+  // Trunk, leaning very slightly.
+  ctx.save();
+  ctx.translate(t.x, t.y);
+  ctx.rotate(t.lean * 0.06);
+  rr(ctx, -s * 0.13, -s * 1.5, s * 0.26, s * 1.5, s * 0.1, '#7d5a3c');
+  rr(ctx, -s * 0.13, -s * 1.5, s * 0.11, s * 1.5, s * 0.06, '#6a4a30');
+  ctx.restore();
+
+  // Canopy: a darker base, then lighter blobs stacked on top.
+  circle(ctx, cx - s * 0.5, cy + s * 0.34, s * 0.72, t.tint.dark);
+  circle(ctx, cx + s * 0.52, cy + s * 0.3, s * 0.68, t.tint.dark);
+  circle(ctx, cx, cy + s * 0.42, s * 0.8, t.tint.mid);
+  circle(ctx, cx - s * 0.34, cy - s * 0.24, s * 0.66, t.tint.mid);
+  circle(ctx, cx + s * 0.36, cy - s * 0.2, s * 0.62, t.tint.light);
+  circle(ctx, cx - s * 0.06, cy - s * 0.5, s * 0.58, t.tint.light);
+}
+
+// ---------------------------------------------------------------------------
+// A neighbour. Same build as the postman but shorter, in their own clothes,
+// and with hair instead of a postal cap.
+// ---------------------------------------------------------------------------
+function drawNeighbour(ctx, n) {
+  const swing = n.walking ? Math.sin(n.anim * Math.PI) * 1.6 : 0;
+  const side = n.facing === 'left' || n.facing === 'right';
+  const dir = n.facing === 'left' ? -1 : 1;
+  const h = n.height;
+
+  groundShadow(ctx, n.x, n.y - 1, 4.4, 1.8, 0.18);
+
+  ctx.save();
+  ctx.translate(n.x, n.y);
+
+  // Legs.
+  if (side) {
+    rr(ctx, -1.4 + swing * 0.5 * dir, -h * 0.36, 2.8, h * 0.36, 1.3, n.pants);
+    rr(ctx, -1.4 - swing * 0.5 * dir, -h * 0.36, 2.8, h * 0.36, 1.3, n.pants);
+  } else {
+    rr(ctx, -2.7, -h * 0.36 + Math.abs(swing) * 0.3, 2.5, h * 0.36, 1.2, n.pants);
+    rr(ctx,  0.2, -h * 0.36 - Math.abs(swing) * 0.3, 2.5, h * 0.36, 1.2, n.pants);
+  }
+
+  // Body.
+  const bodyW = side ? 5.8 : 7.4;
+  const bodyH = h * 0.44;
+  rr(ctx, -bodyW / 2, -h * 0.79, bodyW, bodyH, 2.5, n.shirt);
+  ctx.save();
+  rrPath(ctx, -bodyW / 2, -h * 0.79, bodyW, bodyH, 2.5);
+  ctx.clip();
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.12)';
+  ctx.fillRect(bodyW / 2 - 2, -h * 0.79, 2, bodyH);
+  ctx.restore();
+
+  // Head.
+  const headY = -h * 0.79 - 3.3;
+  circle(ctx, 0, headY, 3.5, n.skin);
+
+  // Hair, sitting over the top of the head.
+  ctx.beginPath();
+  ctx.arc(0, headY - (n.facing === 'up' ? 0.1 : 0.5), 3.6,
+          Math.PI * (n.facing === 'up' ? 0.02 : 0.06),
+          Math.PI * (n.facing === 'up' ? 0.98 : 0.94), true);
+  ctx.closePath();
+  ctx.fillStyle = n.hair;
+  ctx.fill();
+
+  // Eyes.
+  if (n.facing === 'down') {
+    circle(ctx, -1.3, headY + 0.7, 0.55, C.ink);
+    circle(ctx,  1.3, headY + 0.7, 0.55, C.ink);
+  } else if (side) {
+    circle(ctx, 1.5 * dir, headY + 0.6, 0.55, C.ink);
+  }
+
   ctx.restore();
 }
 
