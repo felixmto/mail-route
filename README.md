@@ -96,7 +96,7 @@ finishable before you keep the change.
 | --- | --- |
 | `index.html` | The page: canvas, menu, HUD, end-of-shift screens |
 | `styles.css` | Menu and HUD styling (the game world is all canvas) |
-| `sprites.js` | The pixel art. Each sprite is text — one character per pixel |
+| `art.js` | The colour palette and the shape helpers everything is drawn from |
 | `world.js` | Street layout, route generation, traffic |
 | `entities.js` | Postman movement, the hop, dog AI, cars |
 | `render.js` | Camera and all the drawing |
@@ -118,7 +118,17 @@ tuned — `update(1/60)` advances exactly one frame:
 
 ## How the art works
 
-The canvas is genuinely only 200x150 pixels, blown up to fill the window with
-smoothing switched off — that's what makes the blocks look chunky rather than
-blurry. Sprites in `sprites.js` are arrays of strings where each character is
-one pixel and `.` is transparent, so you can redraw the postman by typing.
+Everything is drawn as shapes rather than images — rounded rectangles, circles
+and curves — so there is nothing to load and nothing to go blurry.
+
+The trick is that the game draws in **world units** rather than screen pixels.
+The visible stretch of street is always 200 x 150 of them, and `game.js` works
+out how many real screen pixels that should be and applies it as a single
+transform before each frame. So every coordinate in `render.js` is a world
+unit, the same numbers the game logic uses, and the picture comes out sharp at
+any window size and on any display, including retina screens.
+
+That means if you want to change how something looks, you edit the shapes in
+`render.js` and the colours in `art.js`, and you never have to think about
+resolution. `art.js` holds the palette in one place — change `C.grass` and every
+blade of grass changes with it.

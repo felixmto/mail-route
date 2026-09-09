@@ -4,12 +4,12 @@
 // ---------------------------------------------------------------------------
 
 const canvas = document.getElementById('screen');
-// Set the pixel buffer from the constants rather than trusting the width and
-// height attributes in the HTML — that way the two can never drift apart.
-canvas.width = VIEW_W;
-canvas.height = VIEW_H;
 const ctx = canvas.getContext('2d');
-ctx.imageSmoothingEnabled = false;
+
+// How many device pixels there are to one world unit. Set by fitToWindow(),
+// and applied as a transform before every frame, so all the drawing code can
+// work in world units and still come out sharp on any screen.
+let unitScale = 1;
 
 const el = {
   stage:   document.getElementById('stage'),
@@ -37,14 +37,21 @@ if (el.keyC) el.keyCLabel = el.keyC.querySelector('span');
 // little 12x9 canvas and blown up by CSS. Repainted only when it changes state,
 // since drawHud runs every frame.
 const coffeeIconCtx = el.coffeeIcon ? el.coffeeIcon.getContext('2d') : null;
-if (coffeeIconCtx) coffeeIconCtx.imageSmoothingEnabled = false;
 let coffeeIconPainted = null;
 
 function paintCoffeeIcon(spent) {
   if (!coffeeIconCtx || coffeeIconPainted === spent) return;
   coffeeIconPainted = spent;
-  coffeeIconCtx.clearRect(0, 0, el.coffeeIcon.width, el.coffeeIcon.height);
-  drawSprite(coffeeIconCtx, COFFEE, 0, 0, spent ? COFFEE_PAL_USED : COFFEE_PAL);
+
+  // Match the screen's pixel density here too, or the cup looks soft next to
+  // the crisp text beside it.
+  const dpr = Math.min(window.devicePixelRatio || 1, 3);
+  const cssW = 26, cssH = 22;
+  el.coffeeIcon.width = Math.round(cssW * dpr);
+  el.coffeeIcon.height = Math.round(cssH * dpr);
+  coffeeIconCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  coffeeIconCtx.clearRect(0, 0, cssW, cssH);
+  drawCoffeeCup(coffeeIconCtx, 2, 0, 22, spent);
 }
 
 // The whole game lives in this one object. It's also exposed as window.__game
@@ -467,14 +474,27 @@ function drawHud() {
 // game pixel stays a perfect square block.
 // ---------------------------------------------------------------------------
 function fitToWindow() {
-  const scale = Math.max(1, Math.floor(Math.min(
+  // Fill as much of the window as we can while keeping the street's shape.
+  // No longer rounded to a whole number: the art is smooth now, so a fractional
+  // scale is fine and lets the game use the whole window.
+  const scale = Math.max(1, Math.min(
     (window.innerWidth - 24) / VIEW_W,
     (window.innerHeight - 24) / VIEW_H,
-  )));
-  canvas.style.width = VIEW_W * scale + 'px';
-  canvas.style.height = VIEW_H * scale + 'px';
-  el.stage.style.width = VIEW_W * scale + 'px';
-  el.stage.style.height = VIEW_H * scale + 'px';
+  ));
+  const cssW = Math.round(VIEW_W * scale);
+  const cssH = Math.round(VIEW_H * scale);
+
+  canvas.style.width = cssW + 'px';
+  canvas.style.height = cssH + 'px';
+  el.stage.style.width = cssW + 'px';
+  el.stage.style.height = cssH + 'px';
+
+  // Give the canvas as many real pixels as the display actually has, so the
+  // curves are crisp on a retina screen rather than blown up from half size.
+  const dpr = Math.min(window.devicePixelRatio || 1, 3);
+  canvas.width = Math.round(cssW * dpr);
+  canvas.height = Math.round(cssH * dpr);
+  unitScale = (cssW / VIEW_W) * dpr;
 }
 window.addEventListener('resize', fitToWindow);
 fitToWindow();
@@ -506,11 +526,15 @@ function frame(now) {
     accumulator = 0;
   }
 
+  // One unit of drawing = one world unit, wherever we are on screen.
+  ctx.setTransform(unitScale, 0, 0, unitScale, 0, 0);
+  ctx.clearRect(0, 0, VIEW_W, VIEW_H);
+
   if (g.world) {
     drawWorld(ctx, g);
   } else {
-    // Menu backdrop before any route exists.
-    px(ctx, 0, 0, VIEW_W, VIEW_H, COL.grass);
+    ctx.fillStyle = C.grass;
+    ctx.fillRect(0, 0, VIEW_W, VIEW_H);
   }
 
   requestAnimationFrame(frame);

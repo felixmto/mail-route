@@ -11,7 +11,7 @@
 <!-- #stage is sized by JS to an exact integer multiple of the 320x180 canvas,
      so the HUD and overlays always line up with the pixels underneath. -->
 <div id="stage">
-  <canvas id="screen" width="200" height="150"></canvas>
+  <canvas id="screen"></canvas>
 
   <!-- ---------------- HUD (shown while playing) ---------------- -->
   <div id="hud" class="hidden">
@@ -30,7 +30,7 @@
       <span class="key"><kbd>R</kbd><span>quit</span></span>
       <!-- The coffee cup itself: a 12x9 pixel sprite painted by game.js and
            scaled up by CSS, so it matches the rest of the art. -->
-      <canvas id="coffee-icon" width="12" height="9" title="Coffee (C)"></canvas>
+      <canvas id="coffee-icon" title="Coffee (C)"></canvas>
     </div>
   </div>
 
@@ -70,7 +70,7 @@
   </div>
 </div>
 
-<script src="sprites.js"></script>
+<script src="art.js"></script>
 <script src="world.js"></script>
 <script src="entities.js"></script>
 <script src="render.js"></script>

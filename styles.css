@@ -6,12 +6,12 @@
 html, body {
   margin: 0;
   height: 100%;
-  background: #1b2430;
-  /* A faint diagonal weave so the letterboxing isn't a flat void. */
-  background-image:
-    repeating-linear-gradient(45deg, rgba(255,255,255,.02) 0 2px, transparent 2px 6px);
-  color: #f4f1e6;
-  font-family: "Courier New", ui-monospace, monospace;
+  background: #1a2029;
+  /* A soft glow behind the stage instead of a flat void. */
+  background-image: radial-gradient(circle at 50% 42%, #27303c 0%, #161b22 70%);
+  color: #f2f4f7;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue",
+               Arial, sans-serif;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -23,16 +23,17 @@ html, body {
 #stage {
   position: relative;
   line-height: 0;               /* kills the inline-gap under the canvas */
-  box-shadow: 0 0 0 4px #0e141c, 0 18px 50px rgba(0,0,0,.55);
-  border-radius: 2px;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,.06),
+    0 24px 60px rgba(0,0,0,.5),
+    0 4px 14px rgba(0,0,0,.35);
 }
 
 #screen {
   display: block;
-  /* The whole point: never smooth the 320x180 buffer when scaling it up. */
-  image-rendering: pixelated;
-  image-rendering: crisp-edges;
-  background: #7fc14a;
+  background: #8ac96e;
 }
 
 .hidden { display: none !important; }
@@ -56,23 +57,24 @@ html, body {
 }
 
 .pill {
-  background: rgba(14, 20, 28, .74);
-  border: 1px solid rgba(255,255,255,.2);
-  border-radius: 2px;
-  padding: 3px 6px;
-  font-size: 11px;
-  font-weight: bold;
-  letter-spacing: 1px;
-  text-shadow: 0 1px 0 rgba(0,0,0,.5);
+  background: rgba(18, 24, 32, .62);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border-radius: 999px;
+  padding: 5px 11px;
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: .3px;
+  font-variant-numeric: tabular-nums;
 }
 
-#clock { color: #ffe08a; min-width: 46px; text-align: center; }
-#mail  { color: #a7e0ff; }
-#score { color: #b6f2a1; min-width: 44px; text-align: right; }
+#clock { color: #ffd66b; min-width: 52px; text-align: center; }
+#mail  { color: #a9e2ff; }
+#score { color: #a8f0bd; min-width: 48px; text-align: right; }
 
 /* Low on time: the clock pulses red. */
-#clock.urgent { color: #ff8f7a; border-color: rgba(255,120,100,.55); animation: pulse .9s infinite; }
-@keyframes pulse { 50% { background: rgba(120,20,16,.8); } }
+#clock.urgent { color: #ff8d7a; animation: pulse .9s infinite; }
+@keyframes pulse { 50% { background: rgba(150, 34, 26, .78); } }
 
 /* Control legend under the stats row. It sits over the top of the play area,
    and the E lights up when the postman is somewhere he can post a letter. */
@@ -87,25 +89,27 @@ html, body {
 .key {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  /* Same dark pill as the stats above, so the legend stays readable wherever
+  gap: 5px;
+  /* Same soft pill as the stats above, so the legend stays readable wherever
      it happens to sit over the street. */
-  background: rgba(14, 20, 28, .7);
-  border: 1px solid rgba(255,255,255,.14);
-  border-radius: 2px;
-  padding: 2px 6px 2px 3px;
-  font-size: 11px;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  color: rgba(244, 241, 230, .62);
-  transition: color .12s, border-color .12s;
+  background: rgba(18, 24, 32, .55);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border-radius: 999px;
+  padding: 3px 9px 3px 4px;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: .4px;
+  color: rgba(242, 244, 247, .72);
+  transition: color .14s, background .14s;
 }
 
 .key kbd {
-  min-width: 15px;
-  padding: 1px 4px;
+  min-width: 16px;
+  padding: 2px 5px;
   font-size: 10px;
   margin: 0;
+  border-radius: 5px;
   background: rgba(244, 241, 230, .58);
   color: #1b2430;
   border-bottom: 2px solid rgba(0,0,0,.35);
@@ -113,32 +117,30 @@ html, body {
 }
 
 /* Standing at a mailbox or a front door. */
-#key-e.active { color: #ffe08a; border-color: rgba(255, 224, 138, .5); }
+#key-e.active { color: #ffd66b; background: rgba(80, 62, 20, .6); }
 
 /* A dog is close enough to treat — pink, so it reads as a different action. */
-#key-e.treat { color: #ff9fbb; border-color: rgba(255, 159, 187, .5); }
+#key-e.treat { color: #ff9fbb; background: rgba(86, 34, 50, .6); }
 #key-e.treat kbd { background: #ff9fbb; box-shadow: 0 0 0 2px rgba(255, 159, 187, .3); }
 
 /* The coffee: bright while it's working, dimmed once it's gone. */
-#key-c.active { color: #ffe08a; border-color: rgba(255, 224, 138, .5); }
-#key-c.active kbd { background: #ffe08a; }
+#key-c.active { color: #ffd66b; background: rgba(80, 62, 20, .6); }
+#key-c.active kbd { background: #ffd66b; }
 #key-c.spent { opacity: .38; }
 
 /* The cup sits alongside the key chips with no panel behind it — just the
    sprite on the street. Scaled by a whole number so the pixels stay square. */
 #coffee-icon {
-  width: 24px;
-  height: 18px;
-  margin-left: 2px;
+  width: 26px;
+  height: 22px;
+  margin-left: 3px;
   background: none;
-  image-rendering: pixelated;
-  image-rendering: crisp-edges;
-  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, .75));
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, .55));
   transition: opacity .15s;
 }
 #coffee-icon.spent { opacity: .45; }
 #key-e.active kbd {
-  background: #ffe08a;
+  background: #ffd66b;
   color: #1b2430;
   box-shadow: 0 0 0 2px rgba(255, 224, 138, .3);
   animation: keypulse .7s ease-in-out infinite;
@@ -151,21 +153,24 @@ html, body {
 #routebar {
   position: relative;
   flex: 1;
-  height: 10px;
-  background: rgba(14,20,28,.7);
-  border: 1px solid rgba(255,255,255,.2);
-  border-radius: 2px;
+  height: 8px;
+  background: rgba(18,24,32,.62);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border-radius: 999px;
   overflow: hidden;
 }
-#routefill { position: absolute; inset: 0; width: 0%; background: rgba(130,235,150,.62); }
-#routeyou  { position: absolute; top: 0; bottom: 0; width: 3px; left: 0; background: #ffe08a; }
+#routefill { position: absolute; inset: 0; width: 0%; background: rgba(120,232,155,.7); border-radius: 999px; }
+#routeyou  { position: absolute; top: 0; bottom: 0; width: 3px; left: 0; background: #ffd66b; border-radius: 999px; }
 
 /* --------------------------- Overlays --------------------------- */
 
 .overlay {
   position: absolute;
   inset: 0;
-  background: rgba(12, 18, 26, .88);
+  background: rgba(14, 19, 26, .82);
+  backdrop-filter: blur(10px) saturate(.7);
+  -webkit-backdrop-filter: blur(10px) saturate(.7);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -178,76 +183,82 @@ html, body {
 
 h1 {
   margin: 0;
-  font-size: 34px;
-  letter-spacing: 6px;
-  color: #ffe08a;
-  text-shadow: 0 4px 0 #a5651f, 0 6px 12px rgba(0,0,0,.6);
+  font-size: 40px;
+  font-weight: 800;
+  letter-spacing: -1px;
+  color: #ffd66b;
+  text-shadow: 0 6px 24px rgba(255, 190, 80, .22);
 }
 
 h2 {
   margin: 0;
-  font-size: 24px;
-  letter-spacing: 4px;
-  color: #ffe08a;
-  text-shadow: 0 3px 0 #a5651f;
+  font-size: 27px;
+  font-weight: 800;
+  letter-spacing: -.5px;
+  color: #ffd66b;
 }
 
-.tagline { margin: 0; font-size: 13px; color: #cfd8e3; }
-.label   { margin: 8px 0 0; font-size: 11px; letter-spacing: 3px; color: #8fa2b6; }
-.hint    { margin: 4px 0 0; font-size: 11px; color: #8fa2b6; max-width: 460px; }
-.dim     { color: #7b8da0; }
+.tagline { margin: 0; font-size: 14px; color: #b9c4d1; }
+.label   { margin: 10px 0 0; font-size: 10.5px; font-weight: 650;
+           letter-spacing: 2.4px; text-transform: uppercase; color: #7d8b9c; }
+.hint    { margin: 4px 0 0; font-size: 12px; color: #8b98a8; max-width: 460px; }
+.dim     { color: #78889a; }
 
 .shifts { display: flex; gap: 10px; }
 
 .shift {
   font-family: inherit;
   cursor: pointer;
-  background: #2f4f9e;
+  background: linear-gradient(180deg, #4a72d4 0%, #3757ad 100%);
   color: #fff;
   border: 0;
-  border-bottom: 4px solid #1d3266;
-  border-radius: 4px;
-  padding: 12px 16px 10px;
+  border-radius: 14px;
+  padding: 14px 20px 12px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
-  transition: transform .08s, background .12s;
+  gap: 1px;
+  box-shadow: 0 4px 0 #2a4390, 0 8px 20px rgba(0,0,0,.35);
+  transition: transform .12s cubic-bezier(.2,.8,.3,1), box-shadow .12s, filter .12s;
 }
-.shift b  { font-size: 26px; line-height: 1; }
-.shift span { font-size: 11px; letter-spacing: 2px; opacity: .8; }
-.shift em { font-style: normal; font-size: 10px; opacity: .65; margin-top: 3px; }
-.shift:hover  { background: #3d63bd; transform: translateY(-2px); }
-.shift:active { transform: translateY(2px); border-bottom-width: 2px; }
-.shift.wide { margin-top: 8px; padding: 10px 22px; }
+.shift b  { font-size: 28px; font-weight: 800; line-height: 1.05; letter-spacing: -.5px; }
+.shift span { font-size: 11px; font-weight: 600; letter-spacing: 1px; opacity: .78; }
+.shift em { font-style: normal; font-size: 10.5px; opacity: .6; margin-top: 5px; }
+.shift:hover  { transform: translateY(-3px); filter: brightness(1.08);
+                box-shadow: 0 7px 0 #2a4390, 0 14px 26px rgba(0,0,0,.4); }
+.shift:active { transform: translateY(2px); box-shadow: 0 2px 0 #2a4390, 0 4px 12px rgba(0,0,0,.35); }
+.shift.wide { margin-top: 10px; padding: 12px 26px; font-size: 14px; font-weight: 650; }
 
 .controls {
-  margin-top: 6px;
+  margin-top: 8px;
   display: grid;
-  gap: 4px;
-  font-size: 12px;
-  color: #cfd8e3;
+  gap: 7px;
+  font-size: 12.5px;
+  color: #c3cddb;
 }
 
 kbd {
   display: inline-block;
-  min-width: 20px;
-  padding: 1px 5px;
+  min-width: 22px;
+  padding: 3px 7px;
   margin: 0 1px;
-  background: #f4f1e6;
-  color: #1b2430;
-  border-radius: 3px;
-  border-bottom: 2px solid #9aa4ae;
+  background: #f2f4f7;
+  color: #1a2029;
+  border-radius: 7px;
+  box-shadow: 0 2px 0 rgba(0, 0, 0, .28);
+  font-family: inherit;
   font-size: 11px;
-  font-weight: bold;
+  font-weight: 700;
 }
 
 #over-stats {
-  margin: 4px 0 0;
+  margin: 8px 0 0;
   border-collapse: collapse;
-  font-size: 13px;
-  color: #cfd8e3;
+  font-size: 13.5px;
 }
-#over-stats td { padding: 3px 10px; }
-#over-stats td:first-child { text-align: right; color: #8fa2b6; }
-#over-stats td:last-child  { text-align: left; color: #f4f1e6; font-weight: bold; }
+#over-stats td { padding: 5px 14px; }
+#over-stats td:first-child { text-align: right; color: #8b98a8; font-weight: 500; }
+#over-stats td:last-child  { text-align: left; color: #f2f4f7; font-weight: 700;
+                             font-variant-numeric: tabular-nums; }
+#over-stats tr:last-child td { padding-top: 10px; font-size: 16px; }
+#over-stats tr:last-child td:last-child { color: #ffd66b; }
