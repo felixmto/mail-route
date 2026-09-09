@@ -213,8 +213,12 @@ let startMobile = false;
 try {
   const saved = localStorage.getItem(STORE_KEY);
   if (saved !== null) startMobile = saved === '1';
-  // Nothing saved: guess from the device. A coarse pointer means a finger.
-  else startMobile = window.matchMedia('(pointer: coarse)').matches;
+  // Nothing saved: guess from the device. A coarse pointer means a finger, but
+  // that alone catches touchscreen laptops too — so also ask for a portrait
+  // window, which a phone has and a laptop doesn't. Either way the toggle is
+  // right there on the menu if the guess is wrong.
+  else startMobile = window.matchMedia('(pointer: coarse)').matches
+                  && window.innerHeight >= window.innerWidth;
 } catch (err) {
   startMobile = false;
 }
