@@ -76,6 +76,10 @@ phone screen: the street fills the whole display top to bottom, with the
 controls in a bar along the top. On a touch device it picks Mobile for you the
 first time; whichever you choose after that is remembered.
 
+You can pick it on a desktop too — you'll get a phone-shaped frame in the
+middle of the window, which is the easy way to try the touch version without
+picking up a phone.
+
 The controls are a different scheme rather than a translation of the keyboard
 one, because there is nowhere to rest four thumbs on a phone:
 

@@ -531,6 +531,11 @@ const BAR_H = 84;
 // you see an unreasonable distance up the street.
 const VIEW_H_MAX = 520;
 
+// Roughly an iPhone: 390 wide to 844 tall. Used when someone picks the mobile
+// version in a wide desktop window, so they get a phone-shaped preview instead
+// of the street stretched across a letterbox.
+const PHONE_ASPECT = 390 / 844;
+
 function fitToWindow() {
   let cssW, cssH;
 
@@ -542,17 +547,31 @@ function fitToWindow() {
     const winW = Math.round(vv ? vv.width : window.innerWidth);
     const winH = Math.round(vv ? vv.height : window.innerHeight);
 
-    cssW = winW;
-    cssH = Math.max(120, winH - BAR_H);
+    if (winH >= winW) {
+      // A tall window — a phone held upright. Fill the whole screen.
+      cssW = winW;
+      cssH = Math.max(120, winH - BAR_H);
+      el.stage.style.width = '100%';
+      el.stage.style.height = winH + 'px';
+      document.body.classList.remove('phone-frame');
+    } else {
+      // A wide window. Nearly always someone on a desktop having a look at the
+      // mobile version, so give them a phone-shaped box in the middle of the
+      // window rather than squashing the street into a letterbox.
+      const boxH = Math.max(320, Math.min(winH - 24, 860));
+      cssW = Math.round(boxH * PHONE_ASPECT);
+      cssH = Math.max(120, boxH - BAR_H);
+      el.stage.style.width = cssW + 'px';
+      el.stage.style.height = boxH + 'px';
+      document.body.classList.add('phone-frame');
+    }
 
-    // Derive the view height from the leftover box rather than the other way
-    // round. Because of this, one scale factor fits both axes exactly.
+    // Derive the view height from the box rather than the other way round.
+    // Because of this, one scale factor fits both axes exactly.
     VIEW_H = clamp(VIEW_W * (cssH / cssW), 150, VIEW_H_MAX);
-
-    el.stage.style.width = '100%';
-    el.stage.style.height = winH + 'px';
   } else {
     VIEW_H = 150;
+    document.body.classList.remove('phone-frame');
 
     // Fill as much of the window as we can while keeping the street's shape.
     // Not rounded to a whole number: the art is smooth, so a fractional scale

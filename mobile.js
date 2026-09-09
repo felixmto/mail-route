@@ -65,11 +65,17 @@ function setMobile(on, remember) {
   checkOrientation();
 }
 
-// A phone on its side gives a wide, short view: almost no street, and the
-// canvas would have to letterbox. Ask for it the tall way round instead.
+// A phone on its side gives a wide, short view: almost no street left to see.
+// Ask for it the tall way round instead.
+//
+// Only an actual touch device gets told this. A wide window on a desktop is
+// someone having a look at the mobile version, and fitToWindow already gives
+// them a phone-shaped box — telling them to rotate their monitor would just
+// cover the menu with a message they can't act on.
 function checkOrientation() {
   if (!mEl.rotate) return;
-  const sideways = MOBILE && window.innerWidth > window.innerHeight;
+  const onPhone = window.matchMedia('(pointer: coarse)').matches;
+  const sideways = MOBILE && onPhone && window.innerWidth > window.innerHeight;
   mEl.rotate.classList.toggle('hidden', !sideways);
   if (sideways && g.state === 'PLAYING') setState('PAUSED');
 }
@@ -180,6 +186,12 @@ if (mEl.pause)  mEl.pause.addEventListener('click', () => {
   if (g.state === 'PLAYING') setState('PAUSED');
   else if (g.state === 'PAUSED') setState('PLAYING');
 });
+
+// The way out of the rotate message, for anything that reports a touch screen
+// but can't actually be turned — a touchscreen laptop, a kiosk. Without this
+// the message is a dead end, because it covers the menu underneath it.
+const rotateOut = document.getElementById('rotate-out');
+if (rotateOut) rotateOut.addEventListener('click', () => setMobile(false, true));
 
 if (mEl.modeDesktop) mEl.modeDesktop.addEventListener('click', () => setMobile(false, true));
 if (mEl.modeMobile)  mEl.modeMobile.addEventListener('click', () => setMobile(true, true));

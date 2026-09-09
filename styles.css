@@ -300,6 +300,22 @@ body.mobile #stage {
   box-shadow: none;
 }
 
+/* Mobile version being previewed in a wide desktop window. fitToWindow sizes
+   the stage to a phone-shaped box; here it gets the framed card look back so
+   it reads as a phone sitting on the page rather than a broken layout. */
+body.mobile.phone-frame {
+  align-items: center;
+  justify-content: center;
+}
+body.mobile.phone-frame #stage {
+  width: auto;                 /* the px width set by fitToWindow wins anyway */
+  border-radius: 22px;
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,.06),
+    0 24px 60px rgba(0,0,0,.5),
+    0 4px 14px rgba(0,0,0,.35);
+}
+
 body.mobile #screen {
   order: 1;
   /* Hand every touch to our own listeners: no scrolling, no rubber-banding,
@@ -399,6 +415,7 @@ body.mobile .hud-row { gap: 6px; }
 
 /* --- Sideways phone: there'd be almost no street left to see. --- */
 #rotate { z-index: 5; }
+#rotate .mode { margin-top: 6px; }
 
 /* --- Squeezing the menu and end screen onto a phone-width stage --- */
 @media (max-width: 480px) {
